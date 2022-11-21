@@ -11,6 +11,7 @@ const logger = require('./utils/log4js').getLogger('APP');
 const log4js = require('log4js');
 const Errors = require('./errors');
 const AppError = require('./errors/error');
+const cors = require('cors');
 
 app.set('port', config.API_PORT);
 app.use(compression());
@@ -18,23 +19,25 @@ app.use(bodyParser.json({ limit: '1mb' }));
 app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
 app.use(helmet());
 
-if (process.env.NODE_ENV !== 'PRODUCTION') {
-	const cors = require('cors');
-	const whiteList = [
-		'http://localhost:3000'
-	];
-	const corsOptions = {
-		origin: (something, cb) => {
-			if (whiteList.indexOf(something) !== -1) {
-				return cb(null, true);
-			} else {
-				return cb(new Error('invalid host'));
-			}
-		},
-		credentials: true
-	};
-	app.use(cors(corsOptions));
-}
+// if (process.env.NODE_ENV !== 'PRODUCTION') {
+// 	const cors = require('cors');
+// 	const whiteList = [
+// 		'http://localhost:3000'
+// 	];
+// 	const corsOptions = {
+// 		origin: (something, cb) => {
+// 			if (whiteList.indexOf(something) !== -1) {
+// 				return cb(null, true);
+// 			} else {
+// 				return cb(new Error('invalid host'));
+// 			}
+// 		},
+// 		credentials: true
+// 	};
+// 	app.use(cors(corsOptions));
+// }
+
+app.use(cors());
 
 process.on('uncaughtException', (err) => {
 	logger.error(err.message);

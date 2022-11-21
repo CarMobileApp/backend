@@ -12,6 +12,7 @@ const AddressSchema = new Schema(
     landmark: String,
     state: String,
     pincode: String,
+    status: String,
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "user",
