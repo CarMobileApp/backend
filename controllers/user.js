@@ -118,9 +118,14 @@ module.exports.getUserDetails = async (req, res, next) => {
 module.exports.updateUser = async (req, res, next) => {
   let user;
   try {
+    let obj = {};
+    obj = req.body;
+    if (obj?.password) {
+      obj = { ...obj, password: String(await bcrypt.hash(obj?.password, 10)) };
+    }
     user = await Models.users.findOneAndUpdate(
       { _id: req.user._id },
-      { $set: req.body },
+      { $set: obj },
       { new: true }
     );
   } catch (e) {
