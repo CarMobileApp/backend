@@ -2,6 +2,7 @@ const logger = require('../utils/log4js').getLogger('ROUTES');
 const jwtAuthMiddleware = require('../auth/jwt-middleware');
 const config = require('../config');
 const adminModelRoutes = require('./admin-model-routes');
+const userModelRoutes = require('./user-model-routes');
 
 const secrets = {
     JWT_SECRET: config.JWT_SECRET,
@@ -23,6 +24,8 @@ const routes = (app) => {
 
     app.use('/api/v1/', require('./custom-routes'));
 
+    app.use(userModelRoutes);
+    
     app.use(adminModelRoutes);
 
     logger.debug('Initialized all routes');

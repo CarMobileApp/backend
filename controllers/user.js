@@ -253,3 +253,56 @@ module.exports.deleteUserAddress = async (req, res, next) => {
   }
   return res.json({ status: "success" });
 };
+
+module.exports.getServices = async (req, res, next) => {
+  let data;
+  try {
+    data = await Models.services.find({}).select("name -_id").exec();
+  } catch (e) {
+    return next(e);
+  }
+  console.log({ data });
+  return res.json({ status: "success", data });
+};
+
+module.exports.getUserVehicles = async (req, res, next) => {
+  let data;
+  try {
+    data = await Models.vehicles
+      .find({
+        userId: req.user._id,
+      })
+      .select("brand model registerNumber color -_id")
+      .exec();
+  } catch (e) {
+    return next(e);
+  }
+  console.log({ data });
+  return res.json({ status: "success", data });
+};
+
+module.exports.createUserVehicles = async (req, res, next) => {
+  let data;
+
+  const { brand, model, registerNumber, color } = req.body;
+
+  if (!brand || !model || !registerNumber || !color) {
+    return next(Errors.invalidRequest("Please provide the required fields!"));
+  }
+
+  const VehicesModel = Models.vehicles;
+  data = new VehicesModel({
+    brand: String(brand),
+    model: String(model),
+    registerNumber: String(registerNumber),
+    color: String(color),
+    userId: req.user._id,
+  });
+
+  try {
+    data.save();
+  } catch (e) {
+    return next(e);
+  }
+  return res.json({ status: "success", data });
+};
