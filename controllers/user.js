@@ -11,6 +11,7 @@ const secrets = {
 const auth = new Auth(secrets);
 const Models = require("../utils/mongo").getModels();
 const AddressModel = require("../models/address");
+const moment = require("moment");
 
 module.exports.signup = async (req, res, next) => {
   const { firstName, lastName, email, mobileNumber, password, addressObj } =
@@ -261,7 +262,6 @@ module.exports.getServices = async (req, res, next) => {
   } catch (e) {
     return next(e);
   }
-  console.log({ data });
   return res.json({ status: "success", data });
 };
 
@@ -272,12 +272,11 @@ module.exports.getUserVehicles = async (req, res, next) => {
       .find({
         userId: req.user._id,
       })
-      .select("brand model registerNumber color -_id")
+      .select("brand model registerNumber color _id")
       .exec();
   } catch (e) {
     return next(e);
   }
-  console.log({ data });
   return res.json({ status: "success", data });
 };
 
@@ -305,4 +304,223 @@ module.exports.createUserVehicles = async (req, res, next) => {
     return next(e);
   }
   return res.json({ status: "success", data });
+};
+
+module.exports.getBookingTimings = async (req, res, next) => {
+  let data;
+  let bookingTimings = [];
+  let bookedTimings = [];
+  let startTime;
+  let endTime;
+  let breakStartTime;
+  let breakEndTime;
+  try {
+    data = await Models.system
+      .findOne({ day: new Date().getDay(), isActive: true })
+      .exec();
+
+    if (!data || data?.holiday) {
+      return res.json({
+        status: "success",
+        msg: "Service is Temporarily Closed",
+        type: "HOLIDAY",
+      });
+    }
+
+    bookedTimings = await Models.bookings
+      .find({
+        userId: req.user._id,
+        time: {
+          $gte: moment().startOf("day"),
+          $lt: moment().endOf("day"),
+        },
+        $or: [{ status: "PENDING" }, { status: "APPROVED" }],
+      })
+      .exec();
+
+    const isBooked = (time) => {
+      let booked = false;
+      bookedTimings.map((b) => {
+        if (moment(moment(b.time).format()).isSame(time)) {
+          booked = true;
+        }
+      });
+      return booked;
+    };
+
+    startTime = moment(moment().startOf("day"))
+      .add(data?.startTime?.hour, "h")
+      .add(data?.startTime?.minute, "m")
+      .format();
+
+    endTime = moment(moment().startOf("day"))
+      .add(data?.endTime?.hour, "h")
+      .add(data?.endTime?.minute, "m")
+      .format();
+
+    breakStartTime = moment(moment().startOf("day"))
+      .add(data?.breakStartTime?.hour, "h")
+      .add(data?.breakStartTime?.minute, "m")
+      .format();
+
+    breakEndTime = moment(moment().startOf("day"))
+      .add(data?.breakEndTime?.hour, "h")
+      .add(data?.breakEndTime?.minute, "m")
+      .format();
+
+    for (
+      var i = startTime;
+      i < endTime;
+      i = moment(i)
+        .add(data?.slotTime?.hour, "h")
+        .add(data?.slotTime?.minute, "m")
+        .format()
+    ) {
+      if (i < breakStartTime || i >= breakEndTime) {
+        if (
+          !isBooked(i) &&
+          moment().format() < moment(i).subtract(15, "m").format()
+        ) {
+          bookingTimings = [...bookingTimings, { time: i }];
+        }
+      }
+    }
+  } catch (e) {
+    return next(e);
+  }
+  return res.json({ status: "success", data: bookingTimings });
+};
+
+module.exports.createBooking = async (req, res, next) => {
+  let booking;
+  let data;
+  let bookingTimings = [];
+  let bookedTimings = [];
+  let startTime;
+  let endTime;
+  let breakStartTime;
+  let breakEndTime;
+
+  const { time, vehicleIds, addressId } = req.body;
+
+  if (!time || !vehicleIds || !addressId) {
+    return next(Errors.invalidRequest("Please provide the required fields!"));
+  }
+
+  if (!moment(time).isValid()) {
+    return next(Errors.invalidRequest("Invalid date format."));
+  }
+
+  try {
+    data = await Models.system
+      .findOne({ day: new Date().getDay(), isActive: true })
+      .exec();
+
+    if (!data || data?.holiday) {
+      return res.json({
+        status: "success",
+        msg: "Service is Temporarily Closed",
+        type: "HOLIDAY",
+      });
+    }
+
+    bookedTimings = await Models.bookings
+      .find({
+        userId: req.user._id,
+        time: {
+          $gte: moment().startOf("day"),
+          $lt: moment().endOf("day"),
+        },
+        $or: [{ status: "PENDING" }, { status: "APPROVED" }],
+      })
+      .exec();
+
+    const isBooked = (time) => {
+      let booked = false;
+      bookedTimings.map((b) => {
+        if (moment(moment(b.time).format()).isSame(time)) {
+          booked = true;
+        }
+      });
+      return booked;
+    };
+
+    startTime = moment(moment().startOf("day"))
+      .add(data?.startTime?.hour, "h")
+      .add(data?.startTime?.minute, "m")
+      .format();
+
+    endTime = moment(moment().startOf("day"))
+      .add(data?.endTime?.hour, "h")
+      .add(data?.endTime?.minute, "m")
+      .format();
+
+    breakStartTime = moment(moment().startOf("day"))
+      .add(data?.breakStartTime?.hour, "h")
+      .add(data?.breakStartTime?.minute, "m")
+      .format();
+
+    breakEndTime = moment(moment().startOf("day"))
+      .add(data?.breakEndTime?.hour, "h")
+      .add(data?.breakEndTime?.minute, "m")
+      .format();
+
+    for (
+      var i = startTime;
+      i < endTime;
+      i = moment(i)
+        .add(data?.slotTime?.hour, "h")
+        .add(data?.slotTime?.minute, "m")
+        .format()
+    ) {
+      if (i < breakStartTime || i >= breakEndTime) {
+        if (
+          !isBooked(i) &&
+          moment().format() < moment(i).subtract(15, "m").format()
+        ) {
+          bookingTimings = [...bookingTimings, { time: i }];
+        }
+      }
+    }
+
+    const isValidTiming = (time) => {
+      let isValid = true;
+      bookingTimings.map((b) => {
+        if (moment(moment(b.time).format()).isSame(time)) {
+          isValid = false;
+        }
+      });
+      return isValid;
+    };
+
+    if (isValidTiming(moment(time).format())) {
+      return res.json({
+        status: "success",
+        msg: "Invalid Slot.",
+        type: "INVALID",
+      });
+    }
+
+    if (moment().format() > moment(time).subtract(15, "m").format()) {
+      return res.json({
+        status: "success",
+        msg: "Slot booking time is over.",
+        type: "EXPIRED",
+      });
+    }
+
+    const BookingModel = Models.bookings;
+    booking = new BookingModel({
+      vehicleIds: vehicleIds,
+      addressId: addressId,
+      time: moment(time).format(),
+      status: "PENDING",
+      userId: req.user._id,
+    });
+
+    booking.save();
+  } catch (e) {
+    return next(e);
+  }
+  return res.json({ status: "success", booking });
 };

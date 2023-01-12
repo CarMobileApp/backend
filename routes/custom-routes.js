@@ -15,5 +15,8 @@ router.route("/user/services").get(userCtrl.getServices);
 // Vehicles
 router.route("/user/vehicles").get(userCtrl.getUserVehicles);
 router.route("/user/vehicles").post(userCtrl.createUserVehicles);
+// Booking
+router.route("/user/booking-timings").get(userCtrl.getBookingTimings);
+router.route("/user/booking").post(userCtrl.createBooking);
 
 module.exports = router;

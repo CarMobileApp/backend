@@ -1,10 +1,29 @@
-const mongoose = require('mongoose');
-// const Counter = require('./counter');
-const Admin = require('./admin');
-const Schema = mongoose.Schema;
+const mongoose = require("mongoose");
 
-const BookingSchema = new Schema({
+const BookingSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+    },
+    vehicleIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "vehicle",
+      },
+    ],
+    addressId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "address",
+    },
+    time: Date,
+    //   PENDING
+    //   APPROVED
+    //   PROCESSED
+    //   CANCELLED
+    status: String,
+  },
+  { timestamps: true }
+);
 
-});
-
-module.exports = mongoose.model('booking', BookingSchema);
+module.exports = mongoose.model("booking", BookingSchema);
