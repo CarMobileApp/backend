@@ -18,5 +18,7 @@ router.route("/user/vehicles").post(userCtrl.createUserVehicles);
 // Booking
 router.route("/user/booking-timings").get(userCtrl.getBookingTimings);
 router.route("/user/booking").post(userCtrl.createBooking);
+router.route("/user/bookings").get(userCtrl.getBookings);
+router.route("/user/booking-cancel/:id").patch(userCtrl.updateBookingStatus);
 
 module.exports = router;

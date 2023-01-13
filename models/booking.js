@@ -19,6 +19,7 @@ const BookingSchema = new mongoose.Schema(
     time: Date,
     //   PENDING
     //   APPROVED
+    //   REJECTED
     //   PROCESSED
     //   CANCELLED
     status: String,

@@ -524,3 +524,98 @@ module.exports.createBooking = async (req, res, next) => {
   }
   return res.json({ status: "success", booking });
 };
+
+module.exports.getBookings = async (req, res, next) => {
+  let data;
+  let test;
+  try {
+    const { status } = req?.query;
+
+    if (!status) {
+      return next(Errors.invalidRequest("Please provide the required fields!"));
+    }
+
+    if (
+      status !== "ALL" &&
+      status !== "PENDING" &&
+      status !== "APPROVED" &&
+      status !== "CANCELLED" &&
+      status !== "PROCESSED" &&
+      status !== "REJECTED"
+    ) {
+      return next(Errors.invalidRequest("Please provide the valid fields!"));
+    }
+
+    let obj = { userId: req.user._id };
+
+    if (status !== "ALL") {
+      obj = { ...obj, status: status };
+    }
+
+    data = await Models.bookings
+      .find(obj)
+      .select("time status _id createdAt")
+      .populate({
+        path: "vehicleIds",
+        select: "brand model registerNumber color",
+      })
+      .populate({
+        path: "addressId",
+        select:
+          "firstName lastName mobileNumber addressString landmark state pincode",
+      })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    // test = await Models.bookings.aggregate([
+    //   { $match: { userId: req.user._id } },
+    //   {
+    //     $lookup: {
+    //       from: "addresses",
+    //       localField: "addressId",
+    //       foreignField: "_id",
+    //       as: "address",
+    //     },
+    //   },
+    //   { $unwind: "$address" },
+    //   {
+    //     $lookup: {
+    //       from: "vehicles",
+    //       localField: "vehicleIds",
+    //       foreignField: "_id",
+    //       as: "vehicles",
+    //     },
+    //   },
+    //   {
+    //     $addFields: {
+    //       priority: {
+    //         $cond: { if: { $eq: ["$status", "APPROVED"] }, then: 2, else: 1 },
+    //       },
+    //     },
+    //   },
+    //   { $sort: { priority: -1, createdAt: -1 } },
+    // ]);
+  } catch (e) {
+    return next(e);
+  }
+  return res.json({ status: "success", data });
+};
+
+module.exports.updateBookingStatus = async (req, res, next) => {
+  let data;
+
+  try {
+    data = await Models.bookings.findOneAndUpdate(
+      { _id: req?.params?.id, status: "PENDING" },
+      {
+        $set: {
+          status: "CANCELLED",
+        },
+      },
+      { new: true }
+    );
+  } catch (e) {
+    return next(e);
+  }
+  return res.json({ status: "success", data });
+};
