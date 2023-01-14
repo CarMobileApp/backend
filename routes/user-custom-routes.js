@@ -20,6 +20,6 @@ router.route("/vehicles").post(userCtrl.createUserVehicles);
 router.route("/booking-timings").get(userCtrl.getBookingTimings);
 router.route("/booking").post(userCtrl.createBooking);
 router.route("/bookings").get(userCtrl.getBookings);
-router.route("/booking-cancel/:id").patch(userCtrl.updateBookingStatus);
+router.route("/booking/cancel").post(userCtrl.updateBookingStatus);
 
 module.exports = router;

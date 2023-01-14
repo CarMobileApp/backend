@@ -604,9 +604,11 @@ module.exports.getBookings = async (req, res, next) => {
 module.exports.updateBookingStatus = async (req, res, next) => {
   let data;
 
+  if (!req.body.bookingId) return next(Errors.invalidRequest('Invalid Booking'));
+
   try {
     data = await Models.bookings.findOneAndUpdate(
-      { _id: req?.params?.id, status: "PENDING" },
+      { _id: req.body.bookingId, status: "PENDING" },
       {
         $set: {
           status: "CANCELLED",
