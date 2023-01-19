@@ -511,6 +511,7 @@ module.exports.createBooking = async (req, res, next) => {
 
     const BookingModel = Models.bookings;
     booking = new BookingModel({
+      bookingId: generateBookingId(),
       vehicleIds: vehicleIds,
       addressId: addressId,
       time: moment(time).format(),
@@ -523,6 +524,63 @@ module.exports.createBooking = async (req, res, next) => {
     return next(e);
   }
   return res.json({ status: "success", booking });
+};
+
+const generateBookingId = async () => {
+  const config = await Models.config.findOne({ isActive: true }).exec();
+
+  let bookingId =
+    moment().year() +
+    (moment().month() + 1 < 10 ? "0" : "") +
+    (moment().month() + 1) +
+    (moment().date() < 10 ? "0" : "") +
+    moment().date();
+
+  if (!config) {
+    new Models.config({
+      bookingStatus: {
+        day: moment().day(),
+        count: 1,
+      },
+      bookingCounter: 1,
+      isActive: true,
+    }).save();
+
+    bookingId + 0001;
+  } else if (config?.bookingStatus?.day === moment().day()) {
+    await Models.config.findOneAndUpdate(
+      { isActive: true },
+      {
+        $set: {
+          "config.count": parseInt(config?.bookingStatus?.count + 1),
+          bookingCounter: parseInt(config?.bookingCounter + 1),
+        },
+      },
+      { new: true }
+    );
+
+    let count =
+      parseInt(config?.bookingStatus?.limit) +
+      parseInt(config?.bookingStatus?.count) +
+      1;
+    bookingId = bookingId + count;
+  } else if (config?.bookingStatus?.day !== moment().day()) {
+    await Models.config.findOneAndUpdate(
+      { isActive: true },
+      {
+        $set: {
+          "config.day": parseInt(moment().day()),
+          "config.count": 1,
+          bookingCounter: parseInt(config?.bookingCounter + 1),
+        },
+      },
+      { new: true }
+    );
+
+    let count = parseInt(config?.bookingStatus?.limit) + 1;
+    bookingId = bookingId + count;
+  }
+  return bookingId;
 };
 
 module.exports.getBookings = async (req, res, next) => {
@@ -604,7 +662,8 @@ module.exports.getBookings = async (req, res, next) => {
 module.exports.updateBookingStatus = async (req, res, next) => {
   let data;
 
-  if (!req.body.bookingId) return next(Errors.invalidRequest('Invalid Booking'));
+  if (!req.body.bookingId)
+    return next(Errors.invalidRequest("Invalid Booking"));
 
   try {
     data = await Models.bookings.findOneAndUpdate(

@@ -8,6 +8,7 @@ const Admin = require('../models/admin');
 const System = require('../models/system');
 const Vehicle = require('../models/vehicle')
 const Service = require('../models/service')
+const Config = require('../models/config')
 
 /**
  * @type {Object.<string, Mongoose.Model<Document, {}>>}
@@ -33,6 +34,7 @@ class Mongo{
             models.system = System;
             models.vehicles = Vehicle;
             models.services = Service;
+            models.config = Config;
             logger.debug('Generated Models');
         } catch(e) {
             logger.error(e);
