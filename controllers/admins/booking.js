@@ -55,7 +55,8 @@ module.exports.getBookings = async (req, res, next) => {
 module.exports.updateBookingStatus = async (req, res, next) => {
   let data;
 
-  if (!req.body.bookingId) return next(Errors.invalidRequest('Invalid Booking'));
+  if (!req.body.bookingId)
+    return next(Errors.invalidRequest("Invalid Booking"));
 
   try {
     data = await Models.bookings.findOneAndUpdate(
@@ -70,6 +71,32 @@ module.exports.updateBookingStatus = async (req, res, next) => {
   } catch (e) {
     return next(e);
   }
-  console.log({data})
+  console.log({ data });
+  return res.json({ status: "success", data });
+};
+
+module.exports.rejectBooking = async (req, res, next) => {
+  let data;
+
+  if (!req.body.bookingId)
+    return next(Errors.invalidRequest("Invalid Booking"));
+
+  try {
+    data = await Models.bookings.findOneAndUpdate(
+      {
+        _id: req.body.bookingId,
+        $or: [{ status: "PENDING" }, { status: "APPROVED" }],
+      },
+      {
+        $set: {
+          status: "REJECTED",
+        },
+      },
+      { new: true }
+    );
+  } catch (e) {
+    return next(e);
+  }
+  console.log({ data });
   return res.json({ status: "success", data });
 };
