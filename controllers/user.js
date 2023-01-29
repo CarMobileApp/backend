@@ -508,10 +508,11 @@ module.exports.createBooking = async (req, res, next) => {
         type: "EXPIRED",
       });
     }
+    const bookingId = await generateBookingId();
 
     const BookingModel = Models.bookings;
     booking = new BookingModel({
-      bookingId: generateBookingId(),
+      bookingId: bookingId,
       vehicleIds: vehicleIds,
       addressId: addressId,
       time: moment(time).format(),
@@ -535,6 +536,7 @@ const generateBookingId = async () => {
     (moment().month() + 1) +
     (moment().date() < 10 ? "0" : "") +
     moment().date();
+  bookingId = parseInt(`${bookingId}0000`);
 
   if (!config) {
     new Models.config({
@@ -546,39 +548,35 @@ const generateBookingId = async () => {
       isActive: true,
     }).save();
 
-    bookingId + 0001;
+    bookingId = bookingId + 1;
   } else if (config?.bookingStatus?.day === moment().day()) {
     await Models.config.findOneAndUpdate(
       { isActive: true },
       {
         $set: {
-          "config.count": parseInt(config?.bookingStatus?.count + 1),
+          "bookingStatus.count": parseInt(config?.bookingStatus?.count + 1),
           bookingCounter: parseInt(config?.bookingCounter + 1),
         },
       },
       { new: true }
     );
+    let count = parseInt(config?.bookingStatus?.count) + 1;
 
-    let count =
-      parseInt(config?.bookingStatus?.limit) +
-      parseInt(config?.bookingStatus?.count) +
-      1;
     bookingId = bookingId + count;
   } else if (config?.bookingStatus?.day !== moment().day()) {
     await Models.config.findOneAndUpdate(
       { isActive: true },
       {
         $set: {
-          "config.day": parseInt(moment().day()),
-          "config.count": 1,
+          "bookingStatus.day": parseInt(moment().day()),
+          "bookingStatus.count": 1,
           bookingCounter: parseInt(config?.bookingCounter + 1),
         },
       },
       { new: true }
     );
 
-    let count = parseInt(config?.bookingStatus?.limit) + 1;
-    bookingId = bookingId + count;
+    bookingId = bookingId + 1;
   }
   return bookingId;
 };

@@ -4,7 +4,6 @@ const Schema = mongoose.Schema;
 const bookingCountSchema = mongoose.Schema({
   day: Number,
   count: Number,
-  limit: { type: Boolean, default: 0000 },
 });
 
 const configSchema = new Schema({

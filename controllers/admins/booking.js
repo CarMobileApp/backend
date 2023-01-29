@@ -5,7 +5,7 @@ const Models = require("../../utils/mongo").getModels();
 
 module.exports.getBookings = async (req, res, next) => {
   let data;
-  let test;
+  let count;
   try {
     const { status, offset, limit } = req?.query;
 
@@ -46,10 +46,12 @@ module.exports.getBookings = async (req, res, next) => {
       })
       .sort({ createdAt: -1 })
       .exec();
+
+    count = await Models.bookings.count(obj).exec();
   } catch (e) {
     return next(e);
   }
-  return res.json({ status: "success", data });
+  return res.json({ status: "success", data, count });
 };
 
 module.exports.updateBookingStatus = async (req, res, next) => {
